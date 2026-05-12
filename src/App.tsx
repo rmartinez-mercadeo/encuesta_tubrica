@@ -20,9 +20,7 @@ import { SurveyData, ProcessedMetrics } from './types';
 import { processSurveyData, formatForChart, getReasonsForBrand } from './dataProcessor';
 import { cn } from './lib/utils';
 
-const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRU1G4loj3dr86lSNeaWiO2d0VFXRE9mgXyjzYqX0pbJd6lYFvM5IfGkvvAPxzla8yX0DZW-YcQlOwi/pub?gid=309313660&single=true&output=csv';
-const isViewOnly = new URLSearchParams(window.location.search).get('view') === 'true';
-const COLORS = ['#009EE3', '#1D1D1B', '#C6C6C6', '#4B5563', '#9CA3AF'];
+const COLORS = ['#009EE3', '#66C5EE', '#99D9F5', '#C6C6C6', '#E5E7EB'];
 
 export default function App() {
   const [data, setData] = useState<SurveyData[] | null>(null);
@@ -34,37 +32,6 @@ export default function App() {
   const [selectedPvcBrand, setSelectedPvcBrand] = useState<string>('');
   const [selectedPprBrand, setSelectedPprBrand] = useState<string>('');
   const [selectedCpvcBrand, setSelectedCpvcBrand] = useState<string>('');
-
-  const loadFromSheets = () => {
-  Papa.parse(SHEETS_URL, {
-    download: true,
-    skipEmptyLines: true,
-    complete: (results) => {
-      let rows = results.data as any[][];
-      if (rows.length < 2) return;
-
-      let headerRowIndex = 0;
-      if (String(rows[0][0]).startsWith('#')) {
-        headerRowIndex = 1;
-      }
-
-      const headers = rows[headerRowIndex];
-      const dataRows = rows.slice(headerRowIndex + 1);
-
-      const parsedData = dataRows.map(row => {
-        const obj: any = {};
-        headers.forEach((header: any, i: number) => {
-          obj[header] = row[i];
-        });
-        return obj;
-      });
-
-      const processed = processSurveyData(parsedData);
-      setData(parsedData);
-      setMetrics(processed);
-    },
-  });
-};
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -80,15 +47,6 @@ export default function App() {
       setSelectedCpvcBrand(topCpvc);
     }
   }, [metrics]);
-
-  // Carga automática desde Sheets en modo vista
-  useEffect(() => {
-  if (isViewOnly) {
-    loadFromSheets();
-    }
-  }, []);
-
-  
 
   const handleFileUpload = (file: File) => {
     Papa.parse(file, {
@@ -131,16 +89,15 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Header */}
-      <header className="bg-[#1D1D1B] text-white py-6 px-8 shadow-md">
+      <header className="bg-gray-50 text-[#1D1D1B] py-8 px-8 border-b border-gray-100">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <LayoutDashboard className="text-[#009EE3]" size={32} />
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Informe de Mercado</h1>
-              <p className="text-[#C6C6C6] text-sm">Tuberías y Conexiones Professional</p>
+              <h1 className="text-2xl font-bold tracking-tight">Reporte de Investigación de Mercado</h1>
+              <p className="text-gray-500 font-medium italic">Tuberías y conexiones de presión</p>
             </div>
           </div>
-          {data && !isViewOnly && (
+          {data && (
             <button 
               onClick={() => { setData(null); setMetrics(null); }}
               className="flex items-center gap-2 bg-[#009EE3] hover:bg-opacity-90 transition-all px-4 py-2 rounded-lg font-medium text-sm"
@@ -155,7 +112,7 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 mt-8 relative">
         <AnimatePresence mode="wait">
-          {!data && !isViewOnly ? (
+          {!data ? (
             <motion.div
               key="upload"
               initial={{ opacity: 0, y: 20 }}
@@ -208,19 +165,19 @@ export default function App() {
                 <MetricCard 
                   title="% Ventas PVC" 
                   value={`${metrics?.avgSales.pvc.toFixed(1)}%`} 
-                  icon={<TrendingUp className="text-green-600" />}
+                  icon={<TrendingUp className="text-[#009EE3]" />}
                   id="metric-pvc"
                 />
                 <MetricCard 
                   title="% Ventas PPR" 
                   value={`${metrics?.avgSales.ppr.toFixed(1)}%`} 
-                  icon={<TrendingUp className="text-[#009EE3]" />}
+                  icon={<TrendingUp className="text-[#66C5EE]" />}
                   id="metric-ppr"
                 />
                 <MetricCard 
                   title="% Ventas CPVC" 
                   value={`${metrics?.avgSales.cpvc.toFixed(1)}%`} 
-                  icon={<TrendingUp className="text-[#1D1D1B]" />}
+                  icon={<TrendingUp className="text-[#99D9F5]" />}
                   id="metric-cpvc"
                 />
               </div>
@@ -252,7 +209,7 @@ export default function App() {
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" fontSize={11} width={100} stroke="#1D1D1B" />
                           <Tooltip cursor={{ fill: 'transparent' }} />
-                          <Bar dataKey="value" name="Total" fill="#1D1D1B" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 10, fill: '#1D1D1B' }} />
+                          <Bar dataKey="value" name="Total" fill="#66C5EE" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 10, fill: '#1D1D1B' }} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -265,7 +222,7 @@ export default function App() {
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" fontSize={11} width={100} stroke="#1D1D1B" />
                           <Tooltip cursor={{ fill: 'transparent' }} />
-                          <Bar dataKey="value" name="Total" fill="#C6C6C6" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 10, fill: '#1D1D1B' }} />
+                          <Bar dataKey="value" name="Total" fill="#99D9F5" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 10, fill: '#1D1D1B' }} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -281,8 +238,8 @@ export default function App() {
                 <div className="p-8">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     <RangeChart title="PVC" data={formatForChart(metrics?.salesRanges.pvc || {})} color="#009EE3" />
-                    <RangeChart title="PPR" data={formatForChart(metrics?.salesRanges.ppr || {})} color="#1D1D1B" />
-                    <RangeChart title="CPVC" data={formatForChart(metrics?.salesRanges.cpvc || {})} color="#C6C6C6" />
+                    <RangeChart title="PPR" data={formatForChart(metrics?.salesRanges.ppr || {})} color="#66C5EE" />
+                    <RangeChart title="CPVC" data={formatForChart(metrics?.salesRanges.cpvc || {})} color="#99D9F5" />
                   </div>
                 </div>
               </div>
@@ -400,7 +357,7 @@ export default function App() {
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 className="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden"
               >
-                <div className="bg-[#1D1D1B] p-6 text-white flex justify-between items-center">
+                <div className="bg-[#009EE3] p-6 text-white flex justify-between items-center">
                   <h3 className="text-xl font-bold tracking-tight">{selectedTopic.title}</h3>
                   <button onClick={() => setSelectedTopic(null)} className="hover:bg-white/10 p-2 rounded-full transition-colors">
                     <X size={24} />
@@ -424,7 +381,7 @@ export default function App() {
                 <div className="p-6 bg-gray-50 border-t flex justify-end">
                    <button 
                     onClick={() => setSelectedTopic(null)}
-                    className="bg-[#1D1D1B] text-white px-6 py-2 rounded-xl font-bold text-sm"
+                    className="bg-[#009EE3] text-white px-8 py-2.5 rounded-xl font-bold text-sm hover:bg-opacity-90 transition-all shadow-lg shadow-blue-200"
                    >
                      Cerrar
                    </button>

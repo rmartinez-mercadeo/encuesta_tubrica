@@ -20,6 +20,8 @@ import { SurveyData, ProcessedMetrics } from './types';
 import { processSurveyData, formatForChart, getReasonsForBrand } from './dataProcessor';
 import { cn } from './lib/utils';
 
+const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRU1G4loj3dr86lSNeaWiO2d0VFXRE9mgXyjzYqX0pbJd6lYFvM5IfGkvvAPxzla8yX0DZW-YcQlOwi/pub?gid=309313660&single=true&output=csv';
+const isViewOnly = new URLSearchParams(window.location.search).get('view') === 'true';
 const COLORS = ['#009EE3', '#1D1D1B', '#C6C6C6', '#4B5563', '#9CA3AF'];
 
 export default function App() {
@@ -32,6 +34,37 @@ export default function App() {
   const [selectedPvcBrand, setSelectedPvcBrand] = useState<string>('');
   const [selectedPprBrand, setSelectedPprBrand] = useState<string>('');
   const [selectedCpvcBrand, setSelectedCpvcBrand] = useState<string>('');
+
+  const loadFromSheets = () => {
+  Papa.parse(SHEETS_URL, {
+    download: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      let rows = results.data as any[][];
+      if (rows.length < 2) return;
+
+      let headerRowIndex = 0;
+      if (String(rows[0][0]).startsWith('#')) {
+        headerRowIndex = 1;
+      }
+
+      const headers = rows[headerRowIndex];
+      const dataRows = rows.slice(headerRowIndex + 1);
+
+      const parsedData = dataRows.map(row => {
+        const obj: any = {};
+        headers.forEach((header: any, i: number) => {
+          obj[header] = row[i];
+        });
+        return obj;
+      });
+
+      const processed = processSurveyData(parsedData);
+      setData(parsedData);
+      setMetrics(processed);
+    },
+  });
+};
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,6 +80,15 @@ export default function App() {
       setSelectedCpvcBrand(topCpvc);
     }
   }, [metrics]);
+
+  // Carga automática desde Sheets en modo vista
+  useEffect(() => {
+  if (isViewOnly) {
+    loadFromSheets();
+    }
+  }, []);
+
+  
 
   const handleFileUpload = (file: File) => {
     Papa.parse(file, {
@@ -98,7 +140,7 @@ export default function App() {
               <p className="text-[#C6C6C6] text-sm">Tuberías y Conexiones Professional</p>
             </div>
           </div>
-          {data && (
+          {data && !isViewOnly && (
             <button 
               onClick={() => { setData(null); setMetrics(null); }}
               className="flex items-center gap-2 bg-[#009EE3] hover:bg-opacity-90 transition-all px-4 py-2 rounded-lg font-medium text-sm"
@@ -113,7 +155,7 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 mt-8 relative">
         <AnimatePresence mode="wait">
-          {!data ? (
+          {!data && !isViewOnly ? (
             <motion.div
               key="upload"
               initial={{ opacity: 0, y: 20 }}
